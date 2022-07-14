@@ -147,8 +147,7 @@ bool CMysqlController::InsertQuerys(vector<CString>& querys)
 		fprintf(stderr, "Mysql connection error : %s", mysql_error(&conn));
 		return false;
 	}
-
-
+	
 	for(int i=0; i< querys.size();i++)
 	{
 		query_stat = mysql_query(connection, querys.at(i));

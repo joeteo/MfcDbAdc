@@ -324,8 +324,7 @@ afx_msg LRESULT CMfcDbAdcDlg::OnReceive(WPARAM length, LPARAM lParam)	// * ì¶”ê°
 					tempValue = (rx.at(2) - '0') * 1000 + (rx.at(3) - '0') * 100 + (rx.at(4) - '0') * 10
 						+ (rx.at(5) - '0') * 1;
 
-
-					CMysqlController conn;
+										
 					CString temp;
 					CString strTempValue;
 
@@ -335,23 +334,14 @@ afx_msg LRESULT CMfcDbAdcDlg::OnReceive(WPARAM length, LPARAM lParam)	// * ì¶”ê°
 					temp += _T("); ");
 
 					querys.push_back(temp);
-
-					//if (conn.InsertQuery(LPSTR(LPCTSTR(temp))) == true)
-					//{
-					//}
-					//else
-					//{
-					//}
-			
-					
+										
 				}else if(rx.at(1)=='B')
 				{
 					int tempValue = 0;
 					tempValue = (rx.at(2) - '0') * 1000 + (rx.at(3) - '0') * 100 + (rx.at(4) - '0') * 10
 						+ (rx.at(5) - '0') * 1;
 
-
-					CMysqlController conn;
+				
 					CString temp;
 					CString strTempValue;
 
@@ -361,14 +351,7 @@ afx_msg LRESULT CMfcDbAdcDlg::OnReceive(WPARAM length, LPARAM lParam)	// * ì¶”ê°
 					temp += _T("); ");
 
 					querys.push_back(temp);
-
-					//if (conn.InsertQuery(LPSTR(LPCTSTR(temp))) == true)
-					//{
-					//}
-					//else
-					//{
-					//}
-
+					
 				}
 
 				rx.erase(rx.begin(), rx.begin() + 6);
@@ -629,6 +612,7 @@ UINT handleQuerys(LPVOID LpData)
 	SendMessage(target->m_hWnd, MYMSG, NULL, NULL);
 
 	return 0;
+
 }
 
 
