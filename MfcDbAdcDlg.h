@@ -11,6 +11,10 @@ using namespace std;
 #include "CMysqlController.h"
 // * 추가 부분 끝 *
 
+#define MYMSG WM_USER+3
+#define MYTERMINATEFLAG WM_USER+4
+
+
 // CMfcDbAdcDlg 대화 상자
 class CMfcDbAdcDlg : public CDialogEx
 {
@@ -67,4 +71,25 @@ public:
 	afx_msg void OnBnClickedButton2();
 	afx_msg void OnBnClickedButton3();
 	afx_msg void OnDestroy();
+	afx_msg void OnDtnDatetimechangeDatetimepicker4(NMHDR* pNMHDR, LRESULT* pResult);
+
+	COleDateTime m_Date;
+	afx_msg void OnDtnDatetimechangeDatetimepicker7(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnDtnDatetimechangeDatetimepicker8(NMHDR* pNMHDR, LRESULT* pResult);
+	COleDateTime m_StartTime;
+	COleDateTime m_EndTime;
+
+	afx_msg void OnBnClickedButton1();
+	
+	CDateTimeCtrl m_CtrlDate;
+	CDateTimeCtrl m_CtrlStartTime;
+	CDateTimeCtrl m_CtrlEndTime;
+	afx_msg void OnClose();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	vector<CString> querys;
+	int terminateFlag;
+
+protected:
+	afx_msg LRESULT OnMymsg(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnMyterminateflag(WPARAM wParam, LPARAM lParam);
 };

@@ -17,6 +17,8 @@ public:
 	CMysqlController();
 	~CMysqlController();
 	bool SelectQuery(char* sql, vector<DataRow*>& row);
+	bool SelectCountQuery(char* sql, unsigned long long& count);
 	bool InsertQuery(char* sql);
+	bool InsertQuerys(vector<CString>& querys);
 };
 

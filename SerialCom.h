@@ -11,8 +11,7 @@
 #define OutBufSize	50000
 #define ASCII_XON	0x11
 #define ASCII_XOFF	0x13
-// 사용자 정의 메시지 0x401 수신 0x402 종료메시지
-//그리고, WM_USER+1에서 1을 더하는것은 WM_USER가 0x400이니까 이 값까지가 시스템이 사용하니까, 1을 더해줘서 0x401 - 0x7FFF까지가 맘대로 사용해도 되는거
+
 #define	WM_MYRECEIVE	(WM_USER+1)	// 데이터 수신 메시지
 #define	WM_MYCLOSE		(WM_USER+2)	// 종료 메시지
 

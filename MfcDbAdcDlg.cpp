@@ -56,6 +56,11 @@ CMfcDbAdcDlg::CMfcDbAdcDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_MFCDBADC_DIALOG, pParent)
 	, m_str_comport(_T(""))
 	, m_combo_baudrate(_T(""))
+	, m_Date(COleDateTime::GetCurrentTime())
+	, m_StartTime(COleDateTime::GetCurrentTime())
+	, m_EndTime(COleDateTime::GetCurrentTime())
+	, terminateFlag(-1)
+
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -69,6 +74,14 @@ void CMfcDbAdcDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_CBString(pDX, IDC_COMBO_BAUDRATE, m_combo_baudrate);
 	DDX_Control(pDX, IDC_LIST1, m_list);
 	DDX_Control(pDX, IDC_LIST2, m_list2);
+
+	DDX_DateTimeCtrl(pDX, IDC_DATETIMEPICKER4, m_Date);
+	DDX_DateTimeCtrl(pDX, IDC_DATETIMEPICKER7, m_StartTime);
+	DDX_DateTimeCtrl(pDX, IDC_DATETIMEPICKER8, m_EndTime);
+
+	DDX_Control(pDX, IDC_DATETIMEPICKER4, m_CtrlDate);
+	DDX_Control(pDX, IDC_DATETIMEPICKER7, m_CtrlStartTime);
+	DDX_Control(pDX, IDC_DATETIMEPICKER8, m_CtrlEndTime);
 }
 
 BEGIN_MESSAGE_MAP(CMfcDbAdcDlg, CDialogEx)
@@ -85,6 +98,14 @@ BEGIN_MESSAGE_MAP(CMfcDbAdcDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON2, &CMfcDbAdcDlg::OnBnClickedButton2)
 	ON_BN_CLICKED(IDC_BUTTON3, &CMfcDbAdcDlg::OnBnClickedButton3)
 	ON_WM_DESTROY()
+	ON_NOTIFY(DTN_DATETIMECHANGE, IDC_DATETIMEPICKER4, &CMfcDbAdcDlg::OnDtnDatetimechangeDatetimepicker4)
+	ON_NOTIFY(DTN_DATETIMECHANGE, IDC_DATETIMEPICKER7, &CMfcDbAdcDlg::OnDtnDatetimechangeDatetimepicker7)
+	ON_NOTIFY(DTN_DATETIMECHANGE, IDC_DATETIMEPICKER8, &CMfcDbAdcDlg::OnDtnDatetimechangeDatetimepicker8)
+	ON_BN_CLICKED(IDC_BUTTON1, &CMfcDbAdcDlg::OnBnClickedButton1)
+	ON_WM_CLOSE()
+	ON_WM_TIMER()
+	ON_MESSAGE(MYMSG, &CMfcDbAdcDlg::OnMymsg)
+	ON_MESSAGE(MYTERMINATEFLAG, &CMfcDbAdcDlg::OnMyterminateflag)
 END_MESSAGE_MAP()
 
 
@@ -158,8 +179,23 @@ BOOL CMfcDbAdcDlg::OnInitDialog()
 	m_list2.InsertColumn(0, _T("ID"), LVCFMT_CENTER, 40);
 	m_list2.InsertColumn(1, _T("시간"), LVCFMT_CENTER, 200);
 	m_list2.InsertColumn(2, _T("ADC값"), LVCFMT_CENTER, 100);
-	
 
+
+	UpdateData(true);
+
+	CString str = m_Date.Format(_T("%Y-%m-%d  "));
+	str += m_StartTime.Format(_T("%H:%M:%S ~ "));
+	str += m_EndTime.Format(_T("%H:%M:%S"));
+	GetDlgItem(IDC_EDIT1)->SetWindowText(str);
+
+	
+	CString formatStyle = _T("HH:mm:ss");
+	m_CtrlStartTime.SetFormat(formatStyle);
+	m_CtrlEndTime.SetFormat(formatStyle);
+
+	SetTimer(1, 5000, NULL);
+
+	
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -296,16 +332,17 @@ afx_msg LRESULT CMfcDbAdcDlg::OnReceive(WPARAM length, LPARAM lParam)	// * 추�
 					temp = _T("INSERT INTO tb_adc1(datetime, adc) VALUES(now(), ");
 					strTempValue.Format(_T("%d"), tempValue);
 					temp += strTempValue;
-					temp += _T(")");
+					temp += _T("); ");
 
-					if (conn.InsertQuery(LPSTR(LPCTSTR(temp))) == true)
-					{
-					}
-					else
-					{
-					}
+					querys.push_back(temp);
 
-					RenewListControl(1);
+					//if (conn.InsertQuery(LPSTR(LPCTSTR(temp))) == true)
+					//{
+					//}
+					//else
+					//{
+					//}
+			
 					
 				}else if(rx.at(1)=='B')
 				{
@@ -321,18 +358,16 @@ afx_msg LRESULT CMfcDbAdcDlg::OnReceive(WPARAM length, LPARAM lParam)	// * 추�
 					temp = _T("INSERT INTO tb_adc2(datetime, adc) VALUES(now(), ");
 					strTempValue.Format(_T("%d"), tempValue);
 					temp += strTempValue;
-					temp += _T(")");
+					temp += _T("); ");
 
-					if (conn.InsertQuery(LPSTR(LPCTSTR(temp))) == true)
-					{
-					}
-					else
-					{
-					}
+					querys.push_back(temp);
 
-					RenewListControl(2);
-				
-
+					//if (conn.InsertQuery(LPSTR(LPCTSTR(temp))) == true)
+					//{
+					//}
+					//else
+					//{
+					//}
 
 				}
 
@@ -411,6 +446,7 @@ void CMfcDbAdcDlg::RenewListControl(int tbNum)
 
 void CMfcDbAdcDlg::OnBnClickedButton2()
 {
+
 	RenewListControl(1);
 }
 
@@ -421,14 +457,204 @@ void CMfcDbAdcDlg::OnBnClickedButton3()
 }
 
 
+void CMfcDbAdcDlg::OnDtnDatetimechangeDatetimepicker4(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	LPNMDATETIMECHANGE pDTChange = reinterpret_cast<LPNMDATETIMECHANGE>(pNMHDR);
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+
+
+	UpdateData(TRUE);
+	CString str = m_Date.Format(_T("%Y-%m-%d  "));
+	str += m_StartTime.Format(_T("%H:%M:%S ~ "));
+	str += m_EndTime.Format(_T("%H:%M:%S"));
+	GetDlgItem(IDC_EDIT1)->SetWindowText(str);
+
+	*pResult = 0;
+}
+
+
+void CMfcDbAdcDlg::OnDtnDatetimechangeDatetimepicker7(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	LPNMDATETIMECHANGE pDTChange = reinterpret_cast<LPNMDATETIMECHANGE>(pNMHDR);
+	UpdateData(TRUE);
+	CString str = m_Date.Format(_T("%Y-%m-%d  "));
+	str += m_StartTime.Format(_T("%H:%M:%S ~ "));
+	str += m_EndTime.Format(_T("%H:%M:%S"));
+	GetDlgItem(IDC_EDIT1)->SetWindowText(str);
+
+	*pResult = 0;
+}
+
+
+void CMfcDbAdcDlg::OnDtnDatetimechangeDatetimepicker8(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	LPNMDATETIMECHANGE pDTChange = reinterpret_cast<LPNMDATETIMECHANGE>(pNMHDR);
+
+	UpdateData(TRUE);
+	CString str = m_Date.Format(_T("%Y-%m-%d  "));
+	str += m_StartTime.Format(_T("%H:%M:%S ~ "));
+	str += m_EndTime.Format(_T("%H:%M:%S"));
+	GetDlgItem(IDC_EDIT1)->SetWindowText(str);
+
+	*pResult = 0;
+}
+
+
+void CMfcDbAdcDlg::OnBnClickedButton1()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	COleDateTime currentTime = COleDateTime::GetCurrentTime();
+	if(m_Date.m_dt > currentTime.m_dt)
+	{
+		GetDlgItem(IDC_EDIT1)->SetWindowText(_T("오늘 이전의 날짜를 선택해주세요"));
+	}else if(m_StartTime > m_EndTime)
+	{
+		GetDlgItem(IDC_EDIT1)->SetWindowText(_T("종료시간이 시작시간보다 빠를수 없습니다"));
+	}else
+	{
+		CMysqlController conn;
+		vector<DataRow*> row;
+
+		m_list.DeleteAllItems();
+
+		UpdateData(TRUE);
+
+		CString temp = _T("SELECT * FROM tb_adc1 WHERE datetime >= '");
+		CString tempDate = m_Date.Format(_T("%Y-%m-%d "));
+		temp += tempDate;
+		CString tempStartTime = m_StartTime.Format(_T("%H:%M:%S' and datetime <= '"));
+		temp += tempStartTime;
+		temp += tempDate;
+		CString tempEndTime = m_EndTime.Format(_T("%H:%M:%S'"));
+		temp += tempEndTime;
+
+		//SELECT* FROM tb_adc1 WHERE datetime >= '2022-07-14 13:17:31' and datetime <= '2022-07-14 13:17:48'
+
+		if (conn.SelectQuery(LPSTR(LPCTSTR(temp)), row) == true) {}
+		for (size_t i = 0; i < row.size(); i++)
+		{
+			m_list.InsertItem(i, row.at(i)->getId());
+			m_list.SetItem(i, 1, LVIF_TEXT, row.at(i)->getDateTime(), NULL, NULL, NULL, NULL);
+			m_list.SetItem(i, 2, LVIF_TEXT, row.at(i)->getAdcValue(), NULL, NULL, NULL, NULL);
+		}
+		m_list.SendMessage(WM_VSCROLL, SB_BOTTOM);
+
+		m_list2.DeleteAllItems();
+
+		temp = _T("SELECT * FROM tb_adc2 WHERE datetime >= '");
+		tempDate = m_Date.Format(_T("%Y-%m-%d "));
+		temp += tempDate;
+		tempStartTime = m_StartTime.Format(_T("%H:%M:%S' and datetime <= '"));
+		temp += tempStartTime;
+		temp += tempDate;
+		tempEndTime = m_EndTime.Format(_T("%H:%M:%S'"));
+		temp += tempEndTime;
+
+		if (conn.SelectQuery(LPSTR(LPCTSTR(temp)), row) == true) {}
+		for (size_t i = 0; i < row.size(); i++)
+		{
+			m_list2.InsertItem(i, row.at(i)->getId());
+			m_list2.SetItem(i, 1, LVIF_TEXT, row.at(i)->getDateTime(), NULL, NULL, NULL, NULL);
+			m_list2.SetItem(i, 2, LVIF_TEXT, row.at(i)->getAdcValue(), NULL, NULL, NULL, NULL);
+		}
+		m_list2.SendMessage(WM_VSCROLL, SB_BOTTOM);
+
+
+		for (size_t i = 0; i < row.size(); i++)
+		{
+			delete row.at(i);
+		}
+	}
+}
+
+UINT deleteOldData(LPVOID LpData)
+{
+	CMfcDbAdcDlg* target = (CMfcDbAdcDlg*)(LpData);
+
+	CMysqlController conn;
+
+	unsigned long long temp1 = 0;
+	unsigned long long temp2 = 0;
+	conn.SelectCountQuery("SELECT COUNT(*) FROM tb_adc1 WHERE DATETIME < DATE_SUB(NOW(), INTERVAL 10 MINUTE)", temp1);
+	conn.SelectCountQuery("SELECT COUNT(*) FROM tb_adc2 WHERE DATETIME < DATE_SUB(NOW(), INTERVAL 10 MINUTE)", temp2);
+
+	for (int i = 0; i < (temp1 / 1000) + 1; i++)
+	{
+		if (conn.InsertQuery("DELETE FROM tb_adc1 WHERE DATETIME < DATE_SUB(NOW(), INTERVAL 10 MINUTE) LIMIT 1000") == true) {}
+	}
+
+	for (int i = 0; i < (temp2 / 1000) + 1; i++)
+	{
+		if (conn.InsertQuery("DELETE FROM tb_adc2 WHERE DATETIME < DATE_SUB(NOW(), INTERVAL 10 MINUTE) LIMIT 1000") == true) {}
+	}
+
+	SendMessage(target->m_hWnd, MYTERMINATEFLAG, NULL, NULL);
+
+	return 0;
+}
+
+
+
+void CMfcDbAdcDlg::OnClose()
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+	AfxBeginThread(deleteOldData, (LPVOID)this);
+
+	if(terminateFlag==-1)
+	{
+		return;
+	}	
+
+	CDialogEx::OnClose();
+}
+
 
 void CMfcDbAdcDlg::OnDestroy()
 {
 	CDialogEx::OnDestroy();
 
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
-	CMysqlController conn;
-	if (conn.InsertQuery("DELETE FROM tb_adc1 WHERE DATETIME < DATE_SUB(NOW(), INTERVAL 10 MINUTE)") == true) {}
-	if (conn.InsertQuery("DELETE FROM tb_adc2 WHERE DATETIME < DATE_SUB(NOW(), INTERVAL 10 MINUTE)") == true) {}
 
+}
+
+
+
+UINT handleQuerys(LPVOID LpData)
+{
+	CMfcDbAdcDlg* target = (CMfcDbAdcDlg*)(LpData);
+	CMysqlController conn;
+	conn.InsertQuerys(target->querys);
+
+	SendMessage(target->m_hWnd, MYMSG, NULL, NULL);
+
+	return 0;
+}
+
+
+void CMfcDbAdcDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+		
+	AfxBeginThread(handleQuerys, (LPVOID)this);
+	
+	CDialogEx::OnTimer(nIDEvent);
+}
+
+
+afx_msg LRESULT CMfcDbAdcDlg::OnMymsg(WPARAM wParam, LPARAM lParam)
+{
+	//RenewListControl(1);
+	//RenewListControl(2);
+
+	return 0;
+}
+
+
+afx_msg LRESULT CMfcDbAdcDlg::OnMyterminateflag(WPARAM wParam, LPARAM lParam)
+{
+	terminateFlag = 1;
+	//OnDestroy();
+	EndDialog(IDCANCEL);
+	return 0;
 }

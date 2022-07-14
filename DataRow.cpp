@@ -6,6 +6,8 @@ DataRow::DataRow(CString _id, CString _dateTime, CString _adcValue)
 {
 	
 }
+
+
 DataRow::~DataRow()
 {
 	
@@ -40,5 +42,3 @@ void DataRow::setAdcValue(const CString& adc_value)
 {
 	adcValue = adc_value;
 }
-
-
