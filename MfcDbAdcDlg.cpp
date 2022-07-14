@@ -168,7 +168,7 @@ BOOL CMfcDbAdcDlg::OnInitDialog()
 	m_list.SetExtendedStyle(
 		LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
 
-	m_list.InsertColumn(0, _T("ID"), LVCFMT_CENTER, 40);
+	m_list.InsertColumn(0, _T("ID"), LVCFMT_CENTER, 80);
 	m_list.InsertColumn(1, _T("시간"), LVCFMT_CENTER, 200);
 	m_list.InsertColumn(2, _T("ADC값"), LVCFMT_CENTER, 100);
 
@@ -176,7 +176,7 @@ BOOL CMfcDbAdcDlg::OnInitDialog()
 	m_list2.SetExtendedStyle(
 		LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
 
-	m_list2.InsertColumn(0, _T("ID"), LVCFMT_CENTER, 40);
+	m_list2.InsertColumn(0, _T("ID"), LVCFMT_CENTER, 80);
 	m_list2.InsertColumn(1, _T("시간"), LVCFMT_CENTER, 200);
 	m_list2.InsertColumn(2, _T("ADC값"), LVCFMT_CENTER, 100);
 
