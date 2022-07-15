@@ -87,7 +87,6 @@ public:
 	afx_msg void OnClose();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	vector<CString> querys;
-	int terminateFlag;
 
 protected:
 	afx_msg LRESULT OnMymsg(WPARAM wParam, LPARAM lParam);

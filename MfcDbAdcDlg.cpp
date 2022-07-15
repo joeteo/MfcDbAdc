@@ -59,7 +59,6 @@ CMfcDbAdcDlg::CMfcDbAdcDlg(CWnd* pParent /*=nullptr*/)
 	, m_Date(COleDateTime::GetCurrentTime())
 	, m_StartTime(COleDateTime::GetCurrentTime())
 	, m_EndTime(COleDateTime::GetCurrentTime())
-	, terminateFlag(-1)
 
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
@@ -327,8 +326,12 @@ afx_msg LRESULT CMfcDbAdcDlg::OnReceive(WPARAM length, LPARAM lParam)	// * 추�
 										
 					CString temp;
 					CString strTempValue;
+					CString strTempNow;
 
-					temp = _T("INSERT INTO tb_adc1(datetime, adc) VALUES(now(), ");
+					temp = _T("INSERT INTO tb_adc1(datetime, adc) VALUES('");
+					COleDateTime now = COleDateTime::GetCurrentTime();
+					strTempNow = now.Format(_T("%Y-%m-%d %H:%M:%S', "));
+					temp += strTempNow;
 					strTempValue.Format(_T("%d"), tempValue);
 					temp += strTempValue;
 					temp += _T("); ");
@@ -344,8 +347,12 @@ afx_msg LRESULT CMfcDbAdcDlg::OnReceive(WPARAM length, LPARAM lParam)	// * 추�
 				
 					CString temp;
 					CString strTempValue;
+					CString strTempNow;
 
-					temp = _T("INSERT INTO tb_adc2(datetime, adc) VALUES(now(), ");
+					temp = _T("INSERT INTO tb_adc2(datetime, adc) VALUES('");
+					COleDateTime now = COleDateTime::GetCurrentTime();
+					strTempNow = now.Format(_T("%Y-%m-%d %H:%M:%S', "));
+					temp += strTempNow;
 					strTempValue.Format(_T("%d"), tempValue);
 					temp += strTempValue;
 					temp += _T("); ");
@@ -398,7 +405,7 @@ void CMfcDbAdcDlg::RenewListControl(int tbNum)
 	{
 	case 1:
 		m_list.DeleteAllItems();
-		if (conn.SelectQuery("select * from tb_adc1", row) == true){}
+		if (conn.SelectQuery("select * from tb_adc1 LIMIT 1000", row) == true){}
 		for (size_t i = 0; i < row.size(); i++)
 		{
 			m_list.InsertItem(i, row.at(i)->getId());
@@ -409,7 +416,7 @@ void CMfcDbAdcDlg::RenewListControl(int tbNum)
 		break;
 	case 2:
 		m_list2.DeleteAllItems();
-		if (conn.SelectQuery("select * from tb_adc2", row) == true){}
+		if (conn.SelectQuery("select * from tb_adc2 LIMIT 1000", row) == true){}
 		for (size_t i = 0; i < row.size(); i++)
 		{
 			m_list2.InsertItem(i, row.at(i)->getId());
@@ -583,11 +590,9 @@ void CMfcDbAdcDlg::OnClose()
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
 	AfxBeginThread(deleteOldData, (LPVOID)this);
+	
+	return;
 
-	if(terminateFlag==-1)
-	{
-		return;
-	}	
 
 	CDialogEx::OnClose();
 }
@@ -628,8 +633,8 @@ void CMfcDbAdcDlg::OnTimer(UINT_PTR nIDEvent)
 
 afx_msg LRESULT CMfcDbAdcDlg::OnMymsg(WPARAM wParam, LPARAM lParam)
 {
-	//RenewListControl(1);
-	//RenewListControl(2);
+	RenewListControl(1);
+	RenewListControl(2);
 
 	return 0;
 }
@@ -637,7 +642,6 @@ afx_msg LRESULT CMfcDbAdcDlg::OnMymsg(WPARAM wParam, LPARAM lParam)
 
 afx_msg LRESULT CMfcDbAdcDlg::OnMyterminateflag(WPARAM wParam, LPARAM lParam)
 {
-	terminateFlag = 1;
 	//OnDestroy();
 	EndDialog(IDCANCEL);
 	return 0;
