@@ -12,6 +12,10 @@
 #define new DEBUG_NEW
 #endif
 
+// 그래프용 추가 시작
+#include "stdafx.h"
+// 그래프용 추가 끝
+
 
 // 응용 프로그램 정보에 사용되는 CAboutDlg 대화 상자입니다.
 
@@ -59,6 +63,7 @@ CMfcDbAdcDlg::CMfcDbAdcDlg(CWnd* pParent /*=nullptr*/)
 	, m_Date(COleDateTime::GetCurrentTime())
 	, m_StartTime(COleDateTime::GetCurrentTime())
 	, m_EndTime(COleDateTime::GetCurrentTime())
+	, adcValue1(0), adcValue2(0)
 
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
@@ -194,7 +199,33 @@ BOOL CMfcDbAdcDlg::OnInitDialog()
 
 	SetTimer(1, 5000, NULL);
 
-	
+	//* 그래프용 추가 시작
+	// 오실로스코프 컨트롤이 위치할 영역 가져오기
+	CRect rtGraph;
+	GetDlgItem(IDC_STATIC_RT_GRAPH)->GetWindowRect(rtGraph);
+
+	ScreenToClient(rtGraph);
+
+	// 오실로스코프 컨트롤을 생성하고 설정한다.
+	_rtGraph = new COScopeCtrl(2);      // 2개의 그래프 예약
+	_rtGraph->Create(WS_VISIBLE | WS_CHILD, rtGraph, this, IDC_STATIC_RT_GRAPH);
+	_rtGraph->SetRanges(0., 4096.);
+	_rtGraph->autofitYscale = true;
+	_rtGraph->SetYUnits("ADC Value");
+	_rtGraph->SetXUnits("Time");
+	_rtGraph->SetLegendLabel("Potentiometer(1)", 0);
+	_rtGraph->SetLegendLabel("Potentiometer(2)", 1);
+	//_rtGraph->SetLegendLabel("tan(t)", 2);
+	_rtGraph->SetPlotColor(RGB(255, 0, 0), 0);
+	_rtGraph->SetPlotColor(RGB(0, 255, 0), 1);
+	//_rtGraph->SetPlotColor(RGB(0, 0, 255), 2);
+	_rtGraph->InvalidateCtrl();
+
+	// 오실로스코프 컨트롤을 그리기 위한 타이머 이벤트 활성화
+	SetTimer(1000, 10, NULL);
+
+
+	//* 그래프용 추가 끝
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -322,7 +353,7 @@ afx_msg LRESULT CMfcDbAdcDlg::OnReceive(WPARAM length, LPARAM lParam)	// * 추�
 					int tempValue = 0;
 					tempValue = (rx.at(2) - '0') * 1000 + (rx.at(3) - '0') * 100 + (rx.at(4) - '0') * 10
 						+ (rx.at(5) - '0') * 1;
-
+					adcValue1 = (double)tempValue;
 										
 					CString temp;
 					CString strTempValue;
@@ -343,7 +374,7 @@ afx_msg LRESULT CMfcDbAdcDlg::OnReceive(WPARAM length, LPARAM lParam)	// * 추�
 					int tempValue = 0;
 					tempValue = (rx.at(2) - '0') * 1000 + (rx.at(3) - '0') * 100 + (rx.at(4) - '0') * 10
 						+ (rx.at(5) - '0') * 1;
-
+					adcValue2 = (double)tempValue;
 				
 					CString temp;
 					CString strTempValue;
@@ -405,7 +436,7 @@ void CMfcDbAdcDlg::RenewListControl(int tbNum)
 	{
 	case 1:
 		m_list.DeleteAllItems();
-		if (conn.SelectQuery("select * from tb_adc1 LIMIT 1000", row) == true){}
+		if (conn.SelectQuery("SELECT * FROM tb_adc1 WHERE id BETWEEN (SELECT MAX(id) from tb_adc1)-1000 and (SELECT MAX(id) from tb_adc1);", row) == true){}
 		for (size_t i = 0; i < row.size(); i++)
 		{
 			m_list.InsertItem(i, row.at(i)->getId());
@@ -416,7 +447,7 @@ void CMfcDbAdcDlg::RenewListControl(int tbNum)
 		break;
 	case 2:
 		m_list2.DeleteAllItems();
-		if (conn.SelectQuery("select * from tb_adc2 LIMIT 1000", row) == true){}
+		if (conn.SelectQuery("SELECT * FROM tb_adc2 WHERE id BETWEEN (SELECT MAX(id) from tb_adc2)-1000 and (SELECT MAX(id) from tb_adc2);", row) == true){}
 		for (size_t i = 0; i < row.size(); i++)
 		{
 			m_list2.InsertItem(i, row.at(i)->getId());
@@ -601,8 +632,9 @@ void CMfcDbAdcDlg::OnClose()
 void CMfcDbAdcDlg::OnDestroy()
 {
 	CDialogEx::OnDestroy();
-
+	
 	// TODO: 여기에 메시지 처리기 코드를 추가합니다.
+	delete _rtGraph;
 
 }
 
@@ -616,6 +648,8 @@ UINT handleQuerys(LPVOID LpData)
 
 	SendMessage(target->m_hWnd, MYMSG, NULL, NULL);
 
+	//PostMessage(target->m_hWnd, MYMSG, NULL, NULL);
+
 	return 0;
 
 }
@@ -624,8 +658,19 @@ UINT handleQuerys(LPVOID LpData)
 void CMfcDbAdcDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-		
-	AfxBeginThread(handleQuerys, (LPVOID)this);
+
+
+	if (nIDEvent == 1)
+	{
+		AfxBeginThread(handleQuerys, (LPVOID)this);
+	}
+
+	if (nIDEvent == 1000) {
+
+		double value[2] = { adcValue1, adcValue2 };
+
+		_rtGraph->AppendPoints(value);
+	}
 	
 	CDialogEx::OnTimer(nIDEvent);
 }

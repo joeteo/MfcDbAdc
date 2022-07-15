@@ -11,6 +11,10 @@ using namespace std;
 #include "CMysqlController.h"
 // * 추가 부분 끝 *
 
+// * 그래프용 추가 시작
+#include "OScopeCtrl.h"
+// * 그래프용 추가 끝
+
 #define MYMSG WM_USER+3
 #define MYTERMINATEFLAG WM_USER+4
 
@@ -87,6 +91,13 @@ public:
 	afx_msg void OnClose();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	vector<CString> querys;
+
+	// * 그래프용 추가 시작
+	// COScopeCtrl 컨트롤의 객체 포인터를 선언
+	COScopeCtrl* _rtGraph;
+	double adcValue1;
+	double adcValue2;
+	// * 그래프용 추가 끝
 
 protected:
 	afx_msg LRESULT OnMymsg(WPARAM wParam, LPARAM lParam);
